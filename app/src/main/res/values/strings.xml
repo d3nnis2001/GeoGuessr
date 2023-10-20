@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">dschielke</string>
+    <string name="helloworld">Welcome to GSEoGuessr!</string>
 </resources>
