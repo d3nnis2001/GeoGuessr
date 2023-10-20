@@ -1,4 +1,4 @@
-package com.gse23.template;
+package com.gse23.dschielke;
 
 import android.content.Context;
 
