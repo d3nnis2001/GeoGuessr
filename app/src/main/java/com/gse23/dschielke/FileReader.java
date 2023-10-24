@@ -12,7 +12,9 @@ public class FileReader {
     private AssetManager assetManager;
     /**
      * FileLogger geht in die einzelnen Subdirectories und logged alle Files.
+     * @param assetManager AssetManager für AssetDirectory
      */
+
     public void fileLogger(AssetManager assetManager) {
         this.assetManager = assetManager;
         try {
@@ -37,6 +39,8 @@ public class FileReader {
 
     /**
      * Wird von FileLogger vor dem loggen genutzt um zu gucken ob das Bildformat richtig ist.
+     * @param filename Filename für die Überprüfung des Filetyps
+     * @return true, wenn der Dateiname das erwartete Format hat, ansonsten false.
      */
     public Boolean fitsFormat(String filename) {
         String lower = filename.toLowerCase();
