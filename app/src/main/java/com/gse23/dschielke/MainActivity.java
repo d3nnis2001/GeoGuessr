@@ -2,6 +2,7 @@ package com.gse23.dschielke;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.res.AssetManager;
 import android.os.Bundle;
 
 
@@ -14,5 +15,10 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        FileReader fileReader = new FileReader();
+
+        AssetManager assetManager = getAssets();
+        fileReader.fileLogger(assetManager);
+
     }
 }
