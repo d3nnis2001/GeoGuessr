@@ -36,13 +36,16 @@ public class MainActivity extends AppCompatActivity {
             String[] dirsInAlbum = assetManager.list("albums");
             assert dirsInAlbum != null;
             for (String folderName : dirsInAlbum) {
-                try {
-                    String al = "albums/";
-                    String[] images = assetManager.list(al + folderName);
-                    assert images != null;
+                String al = "albums/";
+                String[] images = assetManager.list(al + folderName);
+                if (images.length == 0) {
+                    Log.d("FOLDEREMPTY", "Folder doesn't contain anything!");
+                } else {
+                    int imageCounter = 0;
                     for (String fileName: images) {
                         if (fitsFormat(fileName)) {
                             Log.d(fileName, folderName);
+                            imageCounter++;
                             try (InputStream in =  getAssets().open(al + folderName + "/" + fileName)) {
                                 readExif(in);
                             } catch (IOException e) {
@@ -50,8 +53,9 @@ public class MainActivity extends AppCompatActivity {
                             }
                         }
                     }
-                } catch (IOException e) {
-                    Log.d("FILEERROR", "No files in this Folder!");
+                    if (imageCounter == 0) {
+                        Log.d("FILEERROR", "No compatible files have been found in folder " + folderName);
+                    }
                 }
             }
         } catch (IOException e) {
