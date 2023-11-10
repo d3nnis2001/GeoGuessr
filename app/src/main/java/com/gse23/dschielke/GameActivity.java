@@ -1,11 +1,21 @@
 package com.gse23.dschielke;
 
 import android.app.Activity;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.drawable.Drawable;
 import android.media.ExifInterface;
 import android.os.Bundle;
 import android.content.res.AssetManager;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.ImageView;
+
+import androidx.appcompat.app.AlertDialog;
+
+import java.util.Arrays;
+import java.util.Random;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -22,7 +32,10 @@ public class GameActivity extends Activity {
             super(message);
         }
     }
+    ArrayList<String> hadImage = new ArrayList<>();
     ArrayList<ImageInfo> imagesInf = new ArrayList<>();
+    int currAlbum = 0;
+    String albuName;
     AssetManager assetManager;
     String albuNum = "AlbumNum";
     String albuSlash = "albums/";
@@ -35,16 +48,65 @@ public class GameActivity extends Activity {
         Intent intent = getIntent();
         if (intent != null && intent.hasExtra(albuNum)) {
             int albumNum = intent.getIntExtra(albuNum, 0);
+            currAlbum = albumNum;
             try {
-                String albuName = logCurrentFile(albumNum);
+                albuName = logCurrentFile(albumNum);
                 readAllImages(albuName);
             } catch (IOException e) {
                 Log.d(actName, "Folder doesn't exist");
             }
         }
         logImageData(imagesInf);
+        try {
+            String[] temp = assetManager.list(albuSlash + albuName);
+            assert temp != null;
+            hadImage.addAll(Arrays.asList(temp));
+            showPicture(albuName);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        nextPic();
     }
-    public void readAllImages(String foldername) throws IOException {
+    private void nextPic() {
+        Button showPictureButton = findViewById(R.id.showButton);
+        showPictureButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                try {
+                    showPicture(albuName);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+    }
+    private void showPicture(String foldername) throws IOException {
+        assetManager = getAssets();
+        if (hadImage != null && hadImage.size() > 0) {
+            Random random = new Random();
+            int randomNum = random.nextInt(hadImage.size());
+            InputStream st = getAssets().open(albuSlash + foldername + "/" + hadImage.get(randomNum));
+            ImageView imageView = findViewById(R.id.imageView);
+            Drawable drawable = Drawable.createFromStream(st, null);
+            imageView.setImageDrawable(drawable);
+            hadImage.remove(randomNum);
+        } else {
+            noImagesDialog();
+        }
+    }
+    private void noImagesDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("That's it");
+        builder.setMessage("You've gone through all images");
+        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+        builder.create().show();
+    }
+    private void readAllImages(String foldername) throws IOException {
         assetManager = getAssets();
         String[] albumNames = assetManager.list(albuSlash + foldername);
         int counter = 0;
@@ -71,7 +133,7 @@ public class GameActivity extends Activity {
             throw new NoImagesInAlbumException("No files found! Return to start");
         }
     }
-    public void logImageData(ArrayList<ImageInfo> imginf) {
+    private void logImageData(ArrayList<ImageInfo> imginf) {
         for (int i = 0; i < imginf.size(); i++) {
             String filename = imginf.get(i).getFileName();
             String width = imginf.get(i).getWidth();
@@ -87,19 +149,20 @@ public class GameActivity extends Activity {
             }
         }
     }
-    public void returnToMain() {
+    private void returnToMain() {
         Intent intent = new Intent(this, MainActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         startActivity(intent);
         finish();
     }
-    public String logCurrentFile(int pos) throws IOException {
+    private String logCurrentFile(int pos) throws IOException {
         assetManager = getAssets();
         String[] albumNames = assetManager.list("albums");
+        assert albumNames != null;
         Log.d("Album:", albumNames[pos]);
         return albumNames[pos];
     }
-    public Boolean fitsFormat(String filename) {
+    private Boolean fitsFormat(String filename) {
         String lower = filename.toLowerCase();
         return lower.endsWith(".jpeg") || lower.endsWith(".jpg") || lower.endsWith(".png");
     }
