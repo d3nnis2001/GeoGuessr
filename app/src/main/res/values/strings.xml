@@ -3,4 +3,7 @@
     <string name="helloworld">Welcome to GSEoGuessr!</string>
     <string name="next">Next</string>
     <string name="geoguesserpicture">GeoGuesserPicture</string>
+    <string name="submit">Submit</string>
+    <string name="breitengrad">Breitengrad</string>
+    <string name="längengrad">Längengrad</string>
 </resources>

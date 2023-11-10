@@ -10,6 +10,7 @@ import android.content.res.AssetManager;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
 
 import androidx.appcompat.app.AlertDialog;
@@ -32,6 +33,8 @@ public class GameActivity extends Activity {
             super(message);
         }
     }
+    EditText breitengrad;
+    EditText laengengrad;
     ArrayList<String> hadImage = new ArrayList<>();
     ArrayList<ImageInfo> imagesInf = new ArrayList<>();
     int currAlbum = 0;
@@ -44,6 +47,8 @@ public class GameActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.game_activity);
+        breitengrad = findViewById(R.id.Breitengrad);
+        laengengrad = findViewById(R.id.Laengengrad);
         assetManager = getAssets();
         Intent intent = getIntent();
         // Add Exif data to datastructure
@@ -68,6 +73,7 @@ public class GameActivity extends Activity {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+        submitGuess();
         // Next Picture Button
         nextPic();
     }
@@ -84,6 +90,25 @@ public class GameActivity extends Activity {
             }
         });
     }
+    private void submitGuess() {
+        Button submit = findViewById(R.id.submitButton);
+        submit.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                int inputlen = Integer.parseInt(laengengrad.getText().toString());
+                int inputwidth = Integer.parseInt(breitengrad.getText().toString());
+                final int boundlen = 180;
+                final int boundwidth = 90;
+                if (inputlen > boundlen || inputlen < (boundlen * -1) || inputwidth > boundwidth
+                    || inputwidth < (boundwidth * -1)) {
+                    wrongValuesDialog();
+                } else {
+                    laengengrad.setEnabled(false);
+                    breitengrad.setEnabled(false);
+                }
+            }
+        });
+    }
     private void showPicture(String foldername) throws IOException {
         assetManager = getAssets();
         if (hadImage != null && hadImage.size() > 0) {
@@ -94,6 +119,8 @@ public class GameActivity extends Activity {
             ImageView imageView = findViewById(R.id.imageView);
             Drawable drawable = Drawable.createFromStream(st, null);
             imageView.setImageDrawable(drawable);
+            breitengrad.setText("");
+            laengengrad.setText("");
             // Added Logging of the picture before removing it from the arr
             logCurrentImage(randomString);
             hadImage.remove(randomNum);
@@ -114,6 +141,19 @@ public class GameActivity extends Activity {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("That's it");
         builder.setMessage("You've gone through all images");
+        builder.setPositiveButton("Understood", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+        builder.create().show();
+    }
+
+    private void wrongValuesDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Wrong Values");
+        builder.setMessage("The longitude goes from -180 to 180 and the latitude from -90 to 90. Correct your answer!");
         builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
