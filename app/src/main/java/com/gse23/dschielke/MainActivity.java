@@ -3,9 +3,12 @@ package com.gse23.dschielke;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.res.AssetManager;
-import androidx.exifinterface.media.ExifInterface;
+import android.media.ExifInterface;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ListView;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,14 +18,48 @@ import java.io.InputStream;
  * Das ist die MainActivity, die zuerst ausgeführt wird, wenn die App gestartet wird.
  */
 public class MainActivity extends AppCompatActivity {
+    int currpos = -1;
+    String albu = "albums";
+    String albuSlash = "albums/";
+    ListView lv;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
         AssetManager assetManager = getAssets();
-        fileLogger(assetManager);
+        String[] albumNames = new String[0];
+        try {
+            albumNames = assetManager.list(albu);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        createListview();
+    }
 
+    public void createListview() {
+        AssetManager assetManager = getAssets();
+        String[] albumNames = new String[0];
+        try {
+            albumNames = assetManager.list(albu);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        //fileLogger(assetManager);
+        lv = (ListView) findViewById(R.id.albumlist);
+        AlbumList aa = new AlbumList(getApplicationContext(), albumNames);
+        lv.setAdapter(aa);
+        lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int item, long lag) {
+                if (currpos != item) {
+                    if (currpos != -1) {
+                        aa.putSelected(currpos, false);
+                    }
+                    currpos = item;
+                    aa.putSelected(currpos, true);
+                }
+            }
+        });
     }
 
     /**
@@ -33,11 +70,10 @@ public class MainActivity extends AppCompatActivity {
     public void fileLogger(AssetManager assetManager) {
         try {
             // Store all subdirectories of albums
-            String[] dirsInAlbum = assetManager.list("albums");
+            String[] dirsInAlbum = assetManager.list(albu);
             assert dirsInAlbum != null;
             for (String folderName : dirsInAlbum) {
-                String al = "albums/";
-                String[] images = assetManager.list(al + folderName);
+                String[] images = assetManager.list(albuSlash + folderName);
                 if (images.length == 0) {
                     Log.d("FOLDEREMPTY", "Folder doesn't contain anything!");
                 } else {
@@ -46,7 +82,7 @@ public class MainActivity extends AppCompatActivity {
                         if (fitsFormat(fileName)) {
                             Log.d(fileName, folderName);
                             imageCounter++;
-                            try (InputStream in =  getAssets().open(al + folderName + "/" + fileName)) {
+                            try (InputStream in =  getAssets().open(albuSlash + folderName + "/" + fileName)) {
                                 readExif(in);
                             } catch (IOException e) {
                                 Log.d("EXIFERROR", "Exif Information couldn't be found");
