@@ -1,13 +1,17 @@
 package com.gse23.dschielke;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.DialogInterface;
 import android.content.res.AssetManager;
 import android.media.ExifInterface;
 import android.os.Bundle;
 import android.util.Log;
+import android.content.Intent;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.Button;
 import android.widget.ListView;
 
 import java.io.IOException;
@@ -34,6 +38,39 @@ public class MainActivity extends AppCompatActivity {
             throw new RuntimeException(e);
         }
         createListview();
+        actionButton();
+    }
+
+    public void actionButton() {
+        Button button = (Button) findViewById(R.id.startgamebutton);
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (currpos != -1) {
+                    Intent intent = new Intent(MainActivity.this, GameActivity.class);
+                    startActivity(intent);
+                    // Transfer the pos of the album that we are currently in
+                    Intent intentTwo = new Intent(MainActivity.this, GameActivity.class);
+                    intentTwo.putExtra("AlbumNum", currpos);
+                    startActivity(intentTwo);
+                } else {
+                    forgotAlbum();
+                }
+            }
+        });
+    }
+
+    public void forgotAlbum() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Don't forget...");
+        builder.setMessage("To choose an album to play the game!");
+        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+        builder.create().show();
     }
 
     public void createListview() {
@@ -61,7 +98,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
-
     /**
      * FileLogger geht in die einzelnen Subdirectories und logged alle Files.
      * @param assetManager AssetManager für AssetDirectory
