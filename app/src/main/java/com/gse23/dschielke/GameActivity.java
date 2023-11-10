@@ -46,6 +46,7 @@ public class GameActivity extends Activity {
         setContentView(R.layout.game_activity);
         assetManager = getAssets();
         Intent intent = getIntent();
+        // Add Exif data to datastructure
         if (intent != null && intent.hasExtra(albuNum)) {
             int albumNum = intent.getIntExtra(albuNum, 0);
             currAlbum = albumNum;
@@ -56,7 +57,9 @@ public class GameActivity extends Activity {
                 Log.d(actName, "Folder doesn't exist");
             }
         }
+        // Log all data from datastructure
         logImageData(imagesInf);
+        // Display picutre
         try {
             String[] temp = assetManager.list(albuSlash + albuName);
             assert temp != null;
@@ -65,6 +68,7 @@ public class GameActivity extends Activity {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+        // Next Picture Button
         nextPic();
     }
     private void nextPic() {
@@ -85,13 +89,25 @@ public class GameActivity extends Activity {
         if (hadImage != null && hadImage.size() > 0) {
             Random random = new Random();
             int randomNum = random.nextInt(hadImage.size());
-            InputStream st = getAssets().open(albuSlash + foldername + "/" + hadImage.get(randomNum));
+            String randomString = hadImage.get(randomNum);
+            InputStream st = getAssets().open(albuSlash + foldername + "/" + randomString);
             ImageView imageView = findViewById(R.id.imageView);
             Drawable drawable = Drawable.createFromStream(st, null);
             imageView.setImageDrawable(drawable);
+            // Added Logging of the picture before removing it from the arr
+            logCurrentImage(randomString);
             hadImage.remove(randomNum);
         } else {
             noImagesDialog();
+        }
+    }
+    private void logCurrentImage(String filename) {
+        for (ImageInfo imageInfo : imagesInf) {
+            if (imageInfo.getFileName().equals(filename)) {
+                Log.d(actName, imageInfo.getFileName());
+                Log.d(actName, imageInfo.getWidth());
+                Log.d(actName, imageInfo.getLength());
+            }
         }
     }
     private void noImagesDialog() {
