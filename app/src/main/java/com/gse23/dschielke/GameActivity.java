@@ -9,8 +9,14 @@ import android.util.Log;
 import java.io.IOException;
 
 public class GameActivity extends Activity {
+    public static class NoImagesInAlbumException extends RuntimeException {
+        public NoImagesInAlbumException(String message) {
+            super(message);
+        }
+    }
     AssetManager assetManager;
     String albuNum = "AlbumNum";
+    String actName = "GameActivity";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -20,15 +26,43 @@ public class GameActivity extends Activity {
         if (intent != null && intent.hasExtra(albuNum)) {
             int albumNum = intent.getIntExtra(albuNum, 0);
             try {
-                logCurrentFile(albumNum);
+                String albuName = logCurrentFile(albumNum);
+                readAllImages(albuName);
             } catch (IOException e) {
-                Log.d("GameActivity", "Folder doesn't exist");
+                Log.d(actName, "Folder doesn't exist");
             }
         }
     }
-    public void logCurrentFile(int pos) throws IOException {
+    public void readAllImages(String foldername) throws IOException {
+        assetManager = getAssets();
+        String[] albumNames = assetManager.list("albums/" + foldername);
+        int counter = 0;
+        assert albumNames != null;
+        for (String fileName : albumNames) {
+            if (fitsFormat(fileName)) {
+                counter++;
+                Log.d(actName, fileName);
+            }
+        }
+        if (counter == 0) {
+            returnToMain();
+            throw new NoImagesInAlbumException("No files found! Return to start");
+        }
+    }
+    public void returnToMain() {
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        startActivity(intent);
+        finish();
+    }
+    public String logCurrentFile(int pos) throws IOException {
         assetManager = getAssets();
         String[] albumNames = assetManager.list("albums");
         Log.d("Album:", albumNames[pos]);
+        return albumNames[pos];
+    }
+    public Boolean fitsFormat(String filename) {
+        String lower = filename.toLowerCase();
+        return lower.endsWith(".jpeg") || lower.endsWith(".jpg") || lower.endsWith(".png");
     }
 }
