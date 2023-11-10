@@ -7,6 +7,7 @@ import android.content.res.AssetManager;
 import android.util.Log;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 public class GameActivity extends Activity {
     public static class NoImagesInAlbumException extends RuntimeException {
@@ -14,6 +15,7 @@ public class GameActivity extends Activity {
             super(message);
         }
     }
+    ArrayList<ImageInfo> imagesInf = new ArrayList<>();
     AssetManager assetManager;
     String albuNum = "AlbumNum";
     String actName = "GameActivity";
@@ -32,6 +34,7 @@ public class GameActivity extends Activity {
                 Log.d(actName, "Folder doesn't exist");
             }
         }
+        logImageData(imagesInf);
     }
     public void readAllImages(String foldername) throws IOException {
         assetManager = getAssets();
@@ -41,12 +44,19 @@ public class GameActivity extends Activity {
         for (String fileName : albumNames) {
             if (fitsFormat(fileName)) {
                 counter++;
-                Log.d(actName, fileName);
+                ImageInfo imageInfo = new ImageInfo(fileName);
+                imagesInf.add(imageInfo);
             }
         }
         if (counter == 0) {
             returnToMain();
             throw new NoImagesInAlbumException("No files found! Return to start");
+        }
+    }
+    public void logImageData(ArrayList<ImageInfo> imginf) {
+        for (int i = 0; i < imginf.size(); i++) {
+            String filename = imginf.get(i).getFileName();
+            Log.d(actName, filename);
         }
     }
     public void returnToMain() {
