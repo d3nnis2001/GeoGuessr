@@ -84,9 +84,29 @@ public class GameActivity extends Activity {
             throw new RuntimeException(e);
         }
         submitGuess();
-        getDistance();
         // Next Picture Button
         nextPic();
+    }
+    public void onBackPressed() {
+        showExitDialog();
+    }
+    public void showExitDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Leave the Game");
+        builder.setMessage("Do you want to leave your current Game and go back to choosing a new Album?");
+        builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                returnToMain();
+            }
+        });
+        builder.setNegativeButton("Nein", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogTwo, int whichTwo) {
+                dialogTwo.dismiss();
+            }
+        });
+        builder.create().show();
     }
     private void nextPic() {
         Button showPictureButton = findViewById(R.id.showButton);
