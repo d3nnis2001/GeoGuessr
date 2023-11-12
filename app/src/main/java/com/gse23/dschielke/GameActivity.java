@@ -7,13 +7,17 @@ import android.graphics.drawable.Drawable;
 import android.media.ExifInterface;
 import android.os.Bundle;
 import android.content.res.AssetManager;
+import android.text.method.LinkMovementMethod;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import androidx.appcompat.app.AlertDialog;
+import androidx.core.text.HtmlCompat;
+
 
 import java.util.Arrays;
 import java.util.Random;
@@ -33,6 +37,7 @@ public class GameActivity extends Activity {
             super(message);
         }
     }
+    String currentFilename;
     EditText breitengrad;
     EditText laengengrad;
     ArrayList<String> hadImage = new ArrayList<>();
@@ -64,7 +69,7 @@ public class GameActivity extends Activity {
         }
         // Log all data from datastructure
         logImageData(imagesInf);
-        // Display picutre
+        // Display picture
         try {
             String[] temp = assetManager.list(albuSlash + albuName);
             assert temp != null;
@@ -84,6 +89,8 @@ public class GameActivity extends Activity {
             public void onClick(View view) {
                 try {
                     showPicture(albuName);
+                    laengengrad.setEnabled(true);
+                    breitengrad.setEnabled(true);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -95,8 +102,8 @@ public class GameActivity extends Activity {
         submit.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                int inputlen = Integer.parseInt(laengengrad.getText().toString());
-                int inputwidth = Integer.parseInt(breitengrad.getText().toString());
+                double inputlen = Double.parseDouble(laengengrad.getText().toString());
+                double inputwidth = Double.parseDouble(breitengrad.getText().toString());
                 final int boundlen = 180;
                 final int boundwidth = 90;
                 if (inputlen > boundlen || inputlen < (boundlen * -1) || inputwidth > boundwidth
@@ -105,9 +112,44 @@ public class GameActivity extends Activity {
                 } else {
                     laengengrad.setEnabled(false);
                     breitengrad.setEnabled(false);
+                    // get link and set link on textview
+                    String link = getLink(inputlen, inputwidth);
+                    setLink(link);
                 }
             }
         });
+    }
+    private void setLink(String link) {
+        TextView linkView = findViewById(R.id.mapLink);
+        String text = "<string name='hyperlink'><a href='" + link + "'>Map</a></string>";
+        linkView.setText(HtmlCompat.fromHtml(text, HtmlCompat.FROM_HTML_MODE_LEGACY));
+        linkView.setMovementMethod(LinkMovementMethod.getInstance());
+    }
+    private String getLink(double inputlen, double inputwidth) {
+        String link = "https://www.openstreetmap.org/directions?"
+                + "engine=fossgis_valhalla_foot&route=";
+        ImageInfo img =  getCurrentImageInf(currentFilename);
+        assert img != null;
+        String currLen = formatCord(img.getLength());
+        String currWid = formatCord(img.getWidth());
+        String komma = ",";
+        String map = link + inputwidth + komma + inputlen + ";" + currLen + komma + currWid;
+        Log.d("GetLink", map);
+        return map;
+    }
+    private String formatCord(String cord) {
+        String output = "";
+        String[] allCord = cord.split("[,/]");
+        for (int i = 0; i < allCord.length; i++) {
+            if (i % 2 == 0) {
+                output += allCord[i];
+                if (i == 0) {
+                    output += ".";
+                }
+            }
+        }
+        Log.d(output, "HELLOOO");
+        return output;
     }
     private void showPicture(String foldername) throws IOException {
         assetManager = getAssets();
@@ -115,6 +157,7 @@ public class GameActivity extends Activity {
             Random random = new Random();
             int randomNum = random.nextInt(hadImage.size());
             String randomString = hadImage.get(randomNum);
+            currentFilename = randomString;
             InputStream st = getAssets().open(albuSlash + foldername + "/" + randomString);
             ImageView imageView = findViewById(R.id.imageView);
             Drawable drawable = Drawable.createFromStream(st, null);
@@ -136,6 +179,14 @@ public class GameActivity extends Activity {
                 Log.d(actName, imageInfo.getLength());
             }
         }
+    }
+    private ImageInfo getCurrentImageInf(String filename) {
+        for (ImageInfo imageInfo : imagesInf) {
+            if (imageInfo.getFileName().equals(filename)) {
+                return imageInfo;
+            }
+        }
+        return null;
     }
     private void noImagesDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
