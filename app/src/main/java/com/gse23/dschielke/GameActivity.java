@@ -53,6 +53,7 @@ public class GameActivity extends Activity {
     String albuNum = "AlbumNum";
     String albuSlash = "albums/";
     String actName = "GameActivity";
+    String komma = ",";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -226,7 +227,6 @@ public class GameActivity extends Activity {
         guessedLongitude = inputlen;
         actualLatitude = Double.parseDouble(currWid);
         actualLongitude = Double.parseDouble(currLen);
-        String komma = ",";
         String map = link + inputwidth + komma + inputlen + ";" + currWid + komma + currLen;
         Log.d("GetLink", map);
         return map;
@@ -354,12 +354,17 @@ public class GameActivity extends Activity {
         return lower.endsWith(".jpeg") || lower.endsWith(".jpg") || lower.endsWith(".png");
     }
     private String formatCord(String cord) {
-        cord = cord.replace(",", ".");
+        final int min = 60;
+        final int sec = 3600;
+        final int mil = 100000000;
+        final int umrechnung = 1000000;
+        final int drei = 3;
+        cord = cord.replace(komma, ".");
         String[] cords = cord.split("/");
         double output = Double.parseDouble(cords[0])
-                + Double.parseDouble(cords[1]) / 60
-                + Double.parseDouble(cords[2]) / 3600
-                + Double.parseDouble(cords[3]) / 100000000;
-        return String.valueOf(Math.round((output) * 1000000) / 1000000);
+                + Double.parseDouble(cords[1]) / min
+                + Double.parseDouble(cords[2]) / sec
+                + Double.parseDouble(cords[drei]) / mil;
+        return String.valueOf(Math.round((output) * umrechnung) / umrechnung);
     }
 }
