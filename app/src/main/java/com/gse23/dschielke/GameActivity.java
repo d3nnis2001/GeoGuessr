@@ -227,23 +227,9 @@ public class GameActivity extends Activity {
         actualLatitude = Double.parseDouble(currWid);
         actualLongitude = Double.parseDouble(currLen);
         String komma = ",";
-        String map = link + inputlen + komma + inputwidth + ";" + currLen + komma + currWid;
+        String map = link + inputwidth + komma + inputlen + ";" + currWid + komma + currLen;
         Log.d("GetLink", map);
         return map;
-    }
-    private String formatCord(String cord) {
-        String output = "";
-        String[] allCord = cord.split("[,/]");
-        for (int i = 0; i < allCord.length; i++) {
-            if (i % 2 == 0) {
-                output += allCord[i];
-                if (i == 0) {
-                    output += ".";
-                }
-            }
-        }
-        Log.d(output, "HELLOOO");
-        return output;
     }
     private void showPicture(String foldername) throws IOException {
         assetManager = getAssets();
@@ -318,8 +304,8 @@ public class GameActivity extends Activity {
                 InputStream in =  getAssets().open(albuSlash + foldername + "/"
                         + fileName);
                 ExifInterface exifInterface = new ExifInterface(in);
-                String width = exifInterface.getAttribute(ExifInterface.TAG_GPS_LONGITUDE);
-                String length = exifInterface.getAttribute(ExifInterface.TAG_GPS_LATITUDE);
+                String width = exifInterface.getAttribute(ExifInterface.TAG_GPS_LATITUDE);
+                String length = exifInterface.getAttribute(ExifInterface.TAG_GPS_LONGITUDE);
                 if (width == null && length == null) {
                     returnToMain();
                     throw new CorruptedExifDataException("Exif Data not complete");
@@ -366,5 +352,14 @@ public class GameActivity extends Activity {
     private Boolean fitsFormat(String filename) {
         String lower = filename.toLowerCase();
         return lower.endsWith(".jpeg") || lower.endsWith(".jpg") || lower.endsWith(".png");
+    }
+    private String formatCord(String cord) {
+        cord = cord.replace(",", ".");
+        String[] cords = cord.split("/");
+        double output = Double.parseDouble(cords[0])
+                + Double.parseDouble(cords[1]) / 60
+                + Double.parseDouble(cords[2]) / 3600
+                + Double.parseDouble(cords[3]) / 100000000;
+        return String.valueOf(Math.round((output) * 1000000) / 1000000);
     }
 }
