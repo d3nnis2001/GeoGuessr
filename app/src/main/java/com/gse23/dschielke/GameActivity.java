@@ -165,8 +165,8 @@ public class GameActivity extends Activity {
         char meter = 'm';
         String output = "";
         double dist = getDistance();
-        Points p = new Points(dist);
-        setPoints(p.getPoints());
+        Points point = new Points(dist);
+        setPoints(point.getPoints());
         Log.d("Distance", String.format(roundIt, dist) + meter);
         if (dist >= mega) {
             output = "M" + String.format(roundIt, dist / mega) + meter;
@@ -272,7 +272,8 @@ public class GameActivity extends Activity {
         });
         builder.create().show();
     }
-    private void readAllImages(String foldername) throws IOException, NoImagesInAlbumException, CorruptedExifDataException {
+    private void readAllImages(String foldername) throws IOException,
+            NoImagesInAlbumException, CorruptedExifDataException {
         assetManager = getAssets();
         String[] albumNames = assetManager.list(albuSlash + foldername);
         int counter = 0;
