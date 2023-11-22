@@ -143,19 +143,7 @@ public class GameActivity extends Activity {
         result.setText(String.valueOf(points));
     }
 
-    private int getPoints(double distance) {
-        final int maxpoints = 5000;
-        final int maxDistance = 10000;
-        final int minDistance = 10;
-        if (distance <= minDistance) {
-            return maxpoints;
-        } else if (distance >= maxDistance) {
-            return 0;
-        } else {
-            return (int) Math.round(maxpoints / (Math.log(maxDistance / minDistance))
-                    * Math.log(maxDistance / distance));
-        }
-    }
+
     private double getDistance() {
         // Earth radius in meters
         final int radius = 6371000;
@@ -177,7 +165,8 @@ public class GameActivity extends Activity {
         char meter = 'm';
         String output = "";
         double dist = getDistance();
-        setPoints(getPoints(dist));
+        Points p = new Points(dist);
+        setPoints(p.getPoints());
         Log.d("Distance", String.format(roundIt, dist) + meter);
         if (dist >= mega) {
             output = "M" + String.format(roundIt, dist / mega) + meter;
