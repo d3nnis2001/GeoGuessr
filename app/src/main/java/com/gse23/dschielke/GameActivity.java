@@ -1,6 +1,5 @@
 package com.gse23.dschielke;
 
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -29,9 +28,7 @@ import java.util.ArrayList;
 
 public class GameActivity extends Activity {
     double actualLongitude;
-    double guessedLongitude;
     double actualLatitude;
-    double guessedLatitude;
     String currentFilename;
     EditText breitengrad;
     EditText laengengrad;
@@ -133,7 +130,12 @@ public class GameActivity extends Activity {
                     // get link and set link on textview
                     String link = getLink(inputlen, inputwidth);
                     setLink(link);
-                    sensibleUnitAddition();
+                    Cords cord = new Cords(actualLatitude, actualLongitude, inputwidth, inputlen);
+                    double dist = cord.getDistance();
+                    String output = cord.sensibleUnitAddition();
+                    Points point = new Points(dist);
+                    setPoints(point.getPoints());
+                    setDistance(output, true);
                 }
             }
         });
@@ -143,42 +145,6 @@ public class GameActivity extends Activity {
         result.setText(String.valueOf(points));
     }
 
-
-    private double getDistance() {
-        // Earth radius in meters
-        final int radius = 6371000;
-        double diffLat = Math.toRadians(actualLatitude - guessedLatitude);
-        double diffLong = Math.toRadians(actualLongitude - guessedLongitude);
-        double first = Math.pow(Math.sin(diffLat / 2), 2) + Math.cos(Math.toRadians(actualLatitude))
-                * Math.cos(Math.toRadians(guessedLatitude)) * Math.sin(diffLong / 2)
-                * Math.sin(diffLong / 2);
-        double second = 2 * Math.atan2(Math.sqrt(first), Math.sqrt(1 - first));
-        return radius * second;
-    }
-    @SuppressLint("DefaultLocale")
-    private void sensibleUnitAddition() {
-        final int mega = 1000000;
-        final int kilo = 1000;
-        final int hekto = 100;
-        final int deka = 10;
-        String roundIt = "%.2f";
-        char meter = 'm';
-        String output = "";
-        double dist = getDistance();
-        Points point = new Points(dist);
-        setPoints(point.getPoints());
-        Log.d("Distance", String.format(roundIt, dist) + meter);
-        if (dist >= mega) {
-            output = "M" + String.format(roundIt, dist / mega) + meter;
-        } else if (dist >= kilo) {
-            output = "k" + String.format(roundIt, dist / kilo) + meter;
-        } else if (dist >= hekto) {
-            output = "h" + String.format(roundIt, dist / hekto) + meter;
-        } else {
-            output = "da" + String.format(roundIt, dist / deka) + meter;
-        }
-        setDistance(output, true);
-    }
     private void setDistance(String dis, Boolean vis) {
         TextView dist = findViewById(R.id.distance);
         if (vis) {
@@ -202,8 +168,6 @@ public class GameActivity extends Activity {
         assert img != null;
         String currLen = formatCord(img.getLength());
         String currWid = formatCord(img.getWidth());
-        guessedLatitude = inputwidth;
-        guessedLongitude = inputlen;
         actualLatitude = Double.parseDouble(currWid);
         actualLongitude = Double.parseDouble(currLen);
         String map = link + inputwidth + komma + inputlen + ";" + currWid + komma + currLen;
