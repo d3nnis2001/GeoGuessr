@@ -106,6 +106,8 @@ public class GameActivity extends Activity {
                     laengengrad.setEnabled(true);
                     breitengrad.setEnabled(true);
                     setDistance("No matter", false);
+                    TextView result = findViewById(R.id.points);
+                    result.setText(String.valueOf(0));
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -309,6 +311,9 @@ public class GameActivity extends Activity {
                 + Double.parseDouble(cords[1]) / min
                 + Double.parseDouble(cords[2]) / sec
                 + Double.parseDouble(cords[drei]) / mil;
-        return String.valueOf(Math.round((output) * umrechnung) / umrechnung);
+        double newres = Math.round(output * umrechnung);
+        String result = String.valueOf(newres / umrechnung);
+        Log.d("RESULT", result);
+        return result;
     }
 }
