@@ -1,7 +1,5 @@
 package com.gse23.dschielke;
 
-import android.widget.TextView;
-
 public class Points {
     private double distance;
     public Points(double distance) {
