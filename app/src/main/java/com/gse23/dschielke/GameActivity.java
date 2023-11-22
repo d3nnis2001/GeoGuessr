@@ -28,11 +28,6 @@ import java.io.InputStream;
 import java.util.ArrayList;
 
 public class GameActivity extends Activity {
-    public static class CorruptedExifDataException extends NullPointerException {
-        public CorruptedExifDataException(String message) {
-            super(message);
-        }
-    }
     double actualLongitude;
     double guessedLongitude;
     double actualLatitude;
@@ -64,7 +59,7 @@ public class GameActivity extends Activity {
             try {
                 albuName = logCurrentFile(albumNum);
                 readAllImages(albuName);
-            } catch (IOException | NoImagesInAlbumException e) {
+            } catch (IOException | NoImagesInAlbumException | CorruptedExifDataException e) {
                 Log.d(actName, "Folder doesn't exist");
             }
         }
@@ -288,7 +283,7 @@ public class GameActivity extends Activity {
         });
         builder.create().show();
     }
-    private void readAllImages(String foldername) throws IOException, NoImagesInAlbumException {
+    private void readAllImages(String foldername) throws IOException, NoImagesInAlbumException, CorruptedExifDataException {
         assetManager = getAssets();
         String[] albumNames = assetManager.list(albuSlash + foldername);
         int counter = 0;
