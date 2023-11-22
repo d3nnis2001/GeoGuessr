@@ -28,11 +28,6 @@ import java.io.InputStream;
 import java.util.ArrayList;
 
 public class GameActivity extends Activity {
-    public static class NoImagesInAlbumException extends RuntimeException {
-        public NoImagesInAlbumException(String message) {
-            super(message);
-        }
-    }
     public static class CorruptedExifDataException extends NullPointerException {
         public CorruptedExifDataException(String message) {
             super(message);
@@ -69,7 +64,7 @@ public class GameActivity extends Activity {
             try {
                 albuName = logCurrentFile(albumNum);
                 readAllImages(albuName);
-            } catch (IOException e) {
+            } catch (IOException | NoImagesInAlbumException e) {
                 Log.d(actName, "Folder doesn't exist");
             }
         }
@@ -293,7 +288,7 @@ public class GameActivity extends Activity {
         });
         builder.create().show();
     }
-    private void readAllImages(String foldername) throws IOException {
+    private void readAllImages(String foldername) throws IOException, NoImagesInAlbumException {
         assetManager = getAssets();
         String[] albumNames = assetManager.list(albuSlash + foldername);
         int counter = 0;
