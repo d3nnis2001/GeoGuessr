@@ -256,7 +256,7 @@ public class GameActivity extends Activity {
         for (String fileName : albumNames) {
             if (fitsFormat(fileName)) {
                 counter++;
-                InputStream in =  getAssets().open(albuSlash + foldername + "/"
+                InputStream in = getAssets().open(albuSlash + foldername + "/"
                         + fileName);
                 ExifInterface exifInterface = new ExifInterface(in);
                 String width = exifInterface.getAttribute(ExifInterface.TAG_GPS_LATITUDE);
@@ -268,6 +268,7 @@ public class GameActivity extends Activity {
                 String desc = exifInterface.getAttribute(ExifInterface.TAG_IMAGE_DESCRIPTION);
                 ImageInfo imageInfo = new ImageInfo(fileName, width, length, desc);
                 imagesInf.add(imageInfo);
+                in.close();
             }
         }
         if (counter == 0) {
