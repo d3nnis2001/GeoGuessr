@@ -261,6 +261,7 @@ public class GameActivity extends Activity {
                 ExifInterface exifInterface = new ExifInterface(in);
                 String width = exifInterface.getAttribute(ExifInterface.TAG_GPS_LATITUDE);
                 String length = exifInterface.getAttribute(ExifInterface.TAG_GPS_LONGITUDE);
+                in.close();
                 if (width == null && length == null) {
                     returnToMain();
                     throw new CorruptedExifDataException("Exif Data not complete");
@@ -268,7 +269,6 @@ public class GameActivity extends Activity {
                 String desc = exifInterface.getAttribute(ExifInterface.TAG_IMAGE_DESCRIPTION);
                 ImageInfo imageInfo = new ImageInfo(fileName, width, length, desc);
                 imagesInf.add(imageInfo);
-                in.close();
             }
         }
         if (counter == 0) {
