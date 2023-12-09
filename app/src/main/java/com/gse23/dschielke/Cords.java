@@ -35,13 +35,13 @@ public class Cords {
         double dist = getDistance();
         Log.d("Distance", String.format(roundIt, dist) + meter);
         if (dist >= mega) {
-            output = "M" + String.format(roundIt, dist / mega) + meter;
+            output = String.format(roundIt, dist / mega) + "M" + meter;
         } else if (dist >= kilo) {
-            output = "k" + String.format(roundIt, dist / kilo) + meter;
+            output = String.format(roundIt, dist / kilo) + "k" + meter;
         } else if (dist >= hekto) {
-            output = "h" + String.format(roundIt, dist / hekto) + meter;
+            output = String.format(roundIt, dist / hekto) + "h" + meter;
         } else {
-            output = "da" + String.format(roundIt, dist / deka) + meter;
+            output = String.format(roundIt, dist / deka) + "da" + meter;
         }
         return output;
     }
