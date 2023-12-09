@@ -119,25 +119,33 @@ public class GameActivity extends Activity {
         submit.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                double inputlen = Double.parseDouble(laengengrad.getText().toString());
-                double inputwidth = Double.parseDouble(breitengrad.getText().toString());
-                final int boundlen = 180;
-                final int boundwidth = 90;
-                if (inputlen > boundlen || inputlen < (boundlen * -1) || inputwidth > boundwidth
-                    || inputwidth < (boundwidth * -1)) {
+                String inputLenString = laengengrad.getText().toString();
+                String inputWidthString = breitengrad.getText().toString();
+
+                // Check rather nothing was written in the user inputs
+                if (inputLenString.isEmpty() || inputWidthString.isEmpty()) {
                     wrongValuesDialog();
                 } else {
-                    laengengrad.setEnabled(false);
-                    breitengrad.setEnabled(false);
-                    // get link and set link on textview
-                    String link = getLink(inputlen, inputwidth);
-                    setLink(link);
-                    Cords cord = new Cords(actualLatitude, actualLongitude, inputwidth, inputlen);
-                    double dist = cord.getDistance();
-                    String output = cord.sensibleUnitAddition();
-                    Points point = new Points(dist);
-                    setPoints(point.getPoints());
-                    setDistance(output, true);
+                    double inputlen = Double.parseDouble(laengengrad.getText().toString());
+                    double inputwidth = Double.parseDouble(breitengrad.getText().toString());
+                    final int boundlen = 180;
+                    final int boundwidth = 90;
+                    if (inputlen > boundlen || inputlen < (boundlen * -1) || inputwidth > boundwidth
+                            || inputwidth < (boundwidth * -1)) {
+                        wrongValuesDialog();
+                    } else {
+                        laengengrad.setEnabled(false);
+                        breitengrad.setEnabled(false);
+                        // get link and set link on textview
+                        String link = getLink(inputlen, inputwidth);
+                        setLink(link);
+                        Cords cord = new Cords(actualLatitude, actualLongitude, inputwidth, inputlen);
+                        double dist = cord.getDistance();
+                        String output = cord.sensibleUnitAddition();
+                        Points point = new Points(dist);
+                        setPoints(point.getPoints());
+                        setDistance(output, true);
+                    }
                 }
             }
         });
@@ -229,7 +237,7 @@ public class GameActivity extends Activity {
 
     private void wrongValuesDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Wrong Values");
+        builder.setTitle("Wrong Values or no values");
         builder.setMessage("The longitude goes from -180 to 180 and the latitude from -90 to 90. Correct your answer!");
         builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
             @Override
