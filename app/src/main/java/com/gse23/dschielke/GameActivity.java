@@ -217,7 +217,7 @@ public class GameActivity extends Activity {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("That's it");
         builder.setMessage("You've gone through all images");
-        builder.setPositiveButton("Understood", new DialogInterface.OnClickListener() {
+        builder.setPositiveButton("Go Back", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 dialog.dismiss();
@@ -262,9 +262,22 @@ public class GameActivity extends Activity {
             }
         }
         if (counter == 0) {
-            returnToMain();
+            dialogNoFiles();
             throw new NoImagesInAlbumException("No files found! Return to start");
         }
+    }
+    private void dialogNoFiles() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("We apologize...");
+        builder.setMessage("This folder is right now empty. Check it out in the near future again!");
+        builder.setPositiveButton("Understood", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                returnToMain();
+                dialog.dismiss();
+            }
+        });
+        builder.create().show();
     }
     private void logImageData(ArrayList<ImageInfo> imginf) {
         for (int i = 0; i < imginf.size(); i++) {
