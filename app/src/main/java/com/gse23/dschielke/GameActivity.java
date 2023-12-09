@@ -186,6 +186,7 @@ public class GameActivity extends Activity {
             InputStream st = getAssets().open(albuSlash + foldername + "/" + randomString);
             ImageView imageView = findViewById(R.id.imageView);
             Drawable drawable = Drawable.createFromStream(st, null);
+            st.close();
             imageView.setImageDrawable(drawable);
             breitengrad.setText("");
             laengengrad.setText("");
