@@ -263,7 +263,7 @@ public class GameActivity extends Activity {
                 String length = exifInterface.getAttribute(ExifInterface.TAG_GPS_LONGITUDE);
                 in.close();
                 if (width == null && length == null) {
-                    returnToMain();
+                    dialogNoExif();
                     throw new CorruptedExifDataException("Exif Data not complete");
                 }
                 String desc = exifInterface.getAttribute(ExifInterface.TAG_IMAGE_DESCRIPTION);
@@ -275,6 +275,20 @@ public class GameActivity extends Activity {
             dialogNoFiles();
             throw new NoImagesInAlbumException("No files found! Return to start");
         }
+    }
+    private void dialogNoExif() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("An error has occured...");
+        builder.setMessage("The Exif data for the one of the pictures in the album is missing."
+                + "Pls choose a different one!");
+        builder.setPositiveButton("Choose other", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                returnToMain();
+                dialog.dismiss();
+            }
+        });
+        builder.create().show();
     }
     private void dialogNoFiles() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
