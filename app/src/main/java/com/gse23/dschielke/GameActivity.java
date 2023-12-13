@@ -75,45 +75,125 @@ public class GameActivity extends Activity {
         // Next Picture Button
         nextPic();
     }
-    public void onBackPressed() {
-        showExitDialog();
+    private String getLink(double inputlen, double inputwidth) {
+        String link = "https://www.openstreetmap.org/directions?"
+                + "engine=fossgis_valhalla_foot&route=";
+        ImageInfo img =  getCurrentImageInf(currentFilename);
+        assert img != null;
+        String currLen = formatCord(img.getLength());
+        String currWid = formatCord(img.getWidth());
+        actualLatitude = Double.parseDouble(currWid);
+        actualLongitude = Double.parseDouble(currLen);
+        String map = link + inputwidth + komma + inputlen + ";" + currWid + komma + currLen;
+        Log.d("GetLink", map);
+        return map;
     }
-    public void showExitDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Leave the Game");
-        builder.setMessage("Do you want to leave your current Game and go back to choosing a new Album?");
-        builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                returnToMain();
+    private ImageInfo getCurrentImageInf(String filename) {
+        for (ImageInfo imageInfo : imagesInf) {
+            if (imageInfo.getFileName().equals(filename)) {
+                return imageInfo;
             }
-        });
-        builder.setNegativeButton("Nein", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialogTwo, int whichTwo) {
-                dialogTwo.dismiss();
-            }
-        });
-        builder.create().show();
+        }
+        return null;
     }
-    private void nextPic() {
-        Button showPictureButton = findViewById(R.id.showButton);
-        showPictureButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                try {
-                    showPicture(albuName);
-                    laengengrad.setEnabled(true);
-                    breitengrad.setEnabled(true);
-                    setDistance("No matter", false);
-                    TextView result = findViewById(R.id.points);
-                    result.setText(String.valueOf(0));
-                } catch (IOException e) {
-                    e.printStackTrace();
+    private void readAllImages(String foldername) throws IOException,
+            NoImagesInAlbumException, CorruptedExifDataException {
+        assetManager = getAssets();
+        String[] albumNames = assetManager.list(albuSlash + foldername);
+        int counter = 0;
+        assert albumNames != null;
+        for (String fileName : albumNames) {
+            if (fitsFormat(fileName)) {
+                counter++;
+                InputStream in = getAssets().open(albuSlash + foldername + "/"
+                        + fileName);
+                ExifInterface exifInterface = new ExifInterface(in);
+                String width = exifInterface.getAttribute(ExifInterface.TAG_GPS_LATITUDE);
+                String length = exifInterface.getAttribute(ExifInterface.TAG_GPS_LONGITUDE);
+                in.close();
+                if (width == null && length == null) {
+                    dialogNoExif();
+                    throw new CorruptedExifDataException("Exif Data not complete");
                 }
+                String desc = exifInterface.getAttribute(ExifInterface.TAG_IMAGE_DESCRIPTION);
+                ImageInfo imageInfo = new ImageInfo(fileName, width, length, desc);
+                imagesInf.add(imageInfo);
             }
-        });
+        }
+        if (counter == 0) {
+            dialogNoFiles();
+            throw new NoImagesInAlbumException("No files found! Return to start");
+        }
     }
+    private void returnToMain() {
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        startActivity(intent);
+        finish();
+    }
+    private Boolean fitsFormat(String filename) {
+        String lower = filename.toLowerCase();
+        return lower.endsWith(".jpeg") || lower.endsWith(".jpg") || lower.endsWith(".png");
+    }
+    private String formatCord(String cord) {
+        final int min = 60;
+        final int sec = 3600;
+        final int mil = 100000000;
+        final int umrechnung = 1000000;
+        final int drei = 3;
+        cord = cord.replace(komma, ".");
+        String[] cords = cord.split("/");
+        double output = Double.parseDouble(cords[0])
+                + Double.parseDouble(cords[1]) / min
+                + Double.parseDouble(cords[2]) / sec
+                + Double.parseDouble(cords[drei]) / mil;
+        double newres = Math.round(output * umrechnung);
+        String result = String.valueOf(newres / umrechnung);
+        Log.d("RESULT", result);
+        return result;
+    }
+    // ------------------------ SET VIEWS -------------------------
+    private void setLink(String link) {
+        TextView linkView = findViewById(R.id.mapLink);
+        String text = "<string name='hyperlink'><a href='" + link + "'>Map</a></string>";
+        linkView.setText(HtmlCompat.fromHtml(text, HtmlCompat.FROM_HTML_MODE_LEGACY));
+        linkView.setMovementMethod(LinkMovementMethod.getInstance());
+    }
+    private void setDistance(String dis, Boolean vis) {
+        TextView dist = findViewById(R.id.distance);
+        if (vis) {
+            dist.setText(dis);
+            dist.setVisibility(View.VISIBLE);
+        } else {
+            dist.setVisibility(View.INVISIBLE);
+        }
+    }
+    private void setPoints(double points) {
+        TextView result = findViewById(R.id.points);
+        result.setText(String.valueOf(points));
+    }
+    private void showPicture(String foldername) throws IOException {
+        assetManager = getAssets();
+        if (hadImage != null && hadImage.size() > 0) {
+            Random random = new Random();
+            int randomNum = random.nextInt(hadImage.size());
+            String randomString = hadImage.get(randomNum);
+            currentFilename = randomString;
+            InputStream st = getAssets().open(albuSlash + foldername + "/" + randomString);
+            ImageView imageView = findViewById(R.id.imageView);
+            Drawable drawable = Drawable.createFromStream(st, null);
+            st.close();
+            imageView.setImageDrawable(drawable);
+            breitengrad.setText("");
+            laengengrad.setText("");
+            // Added Logging of the picture before removing it from the arr
+            logCurrentImage(randomString);
+            hadImage.remove(randomNum);
+        } else {
+            noImagesDialog();
+        }
+    }
+    // ------------------------ BUTTONS -------------------------
     private void submitGuess() {
         Button submit = findViewById(R.id.submitButton);
         submit.setOnClickListener(new View.OnClickListener() {
@@ -150,61 +230,28 @@ public class GameActivity extends Activity {
             }
         });
     }
-    private void setPoints(double points) {
-        TextView result = findViewById(R.id.points);
-        result.setText(String.valueOf(points));
+    private void nextPic() {
+        Button showPictureButton = findViewById(R.id.showButton);
+        showPictureButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                try {
+                    showPicture(albuName);
+                    laengengrad.setEnabled(true);
+                    breitengrad.setEnabled(true);
+                    setDistance("No matter", false);
+                    TextView result = findViewById(R.id.points);
+                    result.setText(String.valueOf(0));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
     }
-
-    private void setDistance(String dis, Boolean vis) {
-        TextView dist = findViewById(R.id.distance);
-        if (vis) {
-            dist.setText(dis);
-            dist.setVisibility(View.VISIBLE);
-        } else {
-            dist.setVisibility(View.INVISIBLE);
-        }
+    public void onBackPressed() {
+        showExitDialog();
     }
-
-    private void setLink(String link) {
-        TextView linkView = findViewById(R.id.mapLink);
-        String text = "<string name='hyperlink'><a href='" + link + "'>Map</a></string>";
-        linkView.setText(HtmlCompat.fromHtml(text, HtmlCompat.FROM_HTML_MODE_LEGACY));
-        linkView.setMovementMethod(LinkMovementMethod.getInstance());
-    }
-    private String getLink(double inputlen, double inputwidth) {
-        String link = "https://www.openstreetmap.org/directions?"
-                + "engine=fossgis_valhalla_foot&route=";
-        ImageInfo img =  getCurrentImageInf(currentFilename);
-        assert img != null;
-        String currLen = formatCord(img.getLength());
-        String currWid = formatCord(img.getWidth());
-        actualLatitude = Double.parseDouble(currWid);
-        actualLongitude = Double.parseDouble(currLen);
-        String map = link + inputwidth + komma + inputlen + ";" + currWid + komma + currLen;
-        Log.d("GetLink", map);
-        return map;
-    }
-    private void showPicture(String foldername) throws IOException {
-        assetManager = getAssets();
-        if (hadImage != null && hadImage.size() > 0) {
-            Random random = new Random();
-            int randomNum = random.nextInt(hadImage.size());
-            String randomString = hadImage.get(randomNum);
-            currentFilename = randomString;
-            InputStream st = getAssets().open(albuSlash + foldername + "/" + randomString);
-            ImageView imageView = findViewById(R.id.imageView);
-            Drawable drawable = Drawable.createFromStream(st, null);
-            st.close();
-            imageView.setImageDrawable(drawable);
-            breitengrad.setText("");
-            laengengrad.setText("");
-            // Added Logging of the picture before removing it from the arr
-            logCurrentImage(randomString);
-            hadImage.remove(randomNum);
-        } else {
-            noImagesDialog();
-        }
-    }
+    // ------------------------ LOGGING -------------------------
     private void logCurrentImage(String filename) {
         for (ImageInfo imageInfo : imagesInf) {
             if (imageInfo.getFileName().equals(filename)) {
@@ -214,94 +261,12 @@ public class GameActivity extends Activity {
             }
         }
     }
-    private ImageInfo getCurrentImageInf(String filename) {
-        for (ImageInfo imageInfo : imagesInf) {
-            if (imageInfo.getFileName().equals(filename)) {
-                return imageInfo;
-            }
-        }
-        return null;
-    }
-    private void noImagesDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("That's it");
-        builder.setMessage("You've gone through all images");
-        builder.setPositiveButton("Go Back", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.dismiss();
-            }
-        });
-        builder.create().show();
-    }
-
-    private void wrongValuesDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Wrong Values or no values");
-        builder.setMessage("The longitude goes from -180 to 180 and the latitude from -90 to 90. Correct your answer!");
-        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.dismiss();
-            }
-        });
-        builder.create().show();
-    }
-    private void readAllImages(String foldername) throws IOException,
-            NoImagesInAlbumException, CorruptedExifDataException {
+    private String logCurrentFile(int pos) throws IOException {
         assetManager = getAssets();
-        String[] albumNames = assetManager.list(albuSlash + foldername);
-        int counter = 0;
+        String[] albumNames = assetManager.list("albums");
         assert albumNames != null;
-        for (String fileName : albumNames) {
-            if (fitsFormat(fileName)) {
-                counter++;
-                InputStream in = getAssets().open(albuSlash + foldername + "/"
-                        + fileName);
-                ExifInterface exifInterface = new ExifInterface(in);
-                String width = exifInterface.getAttribute(ExifInterface.TAG_GPS_LATITUDE);
-                String length = exifInterface.getAttribute(ExifInterface.TAG_GPS_LONGITUDE);
-                in.close();
-                if (width == null && length == null) {
-                    dialogNoExif();
-                    throw new CorruptedExifDataException("Exif Data not complete");
-                }
-                String desc = exifInterface.getAttribute(ExifInterface.TAG_IMAGE_DESCRIPTION);
-                ImageInfo imageInfo = new ImageInfo(fileName, width, length, desc);
-                imagesInf.add(imageInfo);
-            }
-        }
-        if (counter == 0) {
-            dialogNoFiles();
-            throw new NoImagesInAlbumException("No files found! Return to start");
-        }
-    }
-    private void dialogNoExif() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("An error has occured...");
-        builder.setMessage("The Exif data for the one of the pictures in the album is missing."
-                + "Pls choose a different one!");
-        builder.setPositiveButton("Choose other", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                returnToMain();
-                dialog.dismiss();
-            }
-        });
-        builder.create().show();
-    }
-    private void dialogNoFiles() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("We apologize...");
-        builder.setMessage("This folder is right now empty. Check it out in the near future again!");
-        builder.setPositiveButton("Understood", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                returnToMain();
-                dialog.dismiss();
-            }
-        });
-        builder.create().show();
+        Log.d("Album:", albumNames[pos]);
+        return albumNames[pos];
     }
     private void logImageData(ArrayList<ImageInfo> imginf) {
         for (int i = 0; i < imginf.size(); i++) {
@@ -319,38 +284,75 @@ public class GameActivity extends Activity {
             }
         }
     }
-    private void returnToMain() {
-        Intent intent = new Intent(this, MainActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        startActivity(intent);
-        finish();
+    // ------------------------ DIALOGS -------------------------
+    public void showExitDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Leave the Game");
+        builder.setMessage("Do you want to leave your current Game and go back to choosing a new Album?");
+        builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                returnToMain();
+            }
+        });
+        builder.setNegativeButton("Nein", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogTwo, int whichTwo) {
+                dialogTwo.dismiss();
+            }
+        });
+        builder.create().show();
     }
-    private String logCurrentFile(int pos) throws IOException {
-        assetManager = getAssets();
-        String[] albumNames = assetManager.list("albums");
-        assert albumNames != null;
-        Log.d("Album:", albumNames[pos]);
-        return albumNames[pos];
+    private void dialogNoFiles() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("We apologize...");
+        builder.setMessage("This folder is right now empty. Check it out in the near future again!");
+        builder.setPositiveButton("Understood", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                returnToMain();
+                dialog.dismiss();
+            }
+        });
+        builder.create().show();
     }
-    private Boolean fitsFormat(String filename) {
-        String lower = filename.toLowerCase();
-        return lower.endsWith(".jpeg") || lower.endsWith(".jpg") || lower.endsWith(".png");
+    private void dialogNoExif() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("An error has occured...");
+        builder.setMessage("The Exif data for the one of the pictures in the album is missing."
+                + "Pls choose a different one!");
+        builder.setPositiveButton("Choose other", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                returnToMain();
+                dialog.dismiss();
+            }
+        });
+        builder.create().show();
     }
-    private String formatCord(String cord) {
-        final int min = 60;
-        final int sec = 3600;
-        final int mil = 100000000;
-        final int umrechnung = 1000000;
-        final int drei = 3;
-        cord = cord.replace(komma, ".");
-        String[] cords = cord.split("/");
-        double output = Double.parseDouble(cords[0])
-                + Double.parseDouble(cords[1]) / min
-                + Double.parseDouble(cords[2]) / sec
-                + Double.parseDouble(cords[drei]) / mil;
-        double newres = Math.round(output * umrechnung);
-        String result = String.valueOf(newres / umrechnung);
-        Log.d("RESULT", result);
-        return result;
+    private void wrongValuesDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Wrong Values or no values");
+        builder.setMessage("The longitude goes from -180 to 180 and the latitude from -90 to 90. Correct your answer!");
+        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+        builder.create().show();
+    }
+    private void noImagesDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("That's it");
+        builder.setMessage("You've gone through all images");
+        builder.setPositiveButton("Go Back", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+        builder.create().show();
     }
 }
+
