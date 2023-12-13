@@ -221,6 +221,8 @@ public class GameActivity extends Activity {
                         setLink(link);
                         Cords cord = new Cords(actualLatitude, actualLongitude, inputwidth, inputlen);
                         double dist = cord.getDistance();
+                        String roundIt = "%.2f";
+                        Log.d("Distance", String.format(roundIt, dist) + "m");
                         String output = cord.sensibleUnitAddition();
                         Points point = new Points(dist);
                         setPoints(point.getPoints());
@@ -355,4 +357,3 @@ public class GameActivity extends Activity {
         builder.create().show();
     }
 }
-

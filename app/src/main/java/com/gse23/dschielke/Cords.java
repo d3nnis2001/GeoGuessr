@@ -1,7 +1,5 @@
 package com.gse23.dschielke;
 
-import android.util.Log;
-
 public class Cords {
     double actualLongitude;
     double guessedLongitude;
@@ -33,7 +31,7 @@ public class Cords {
         char meter = 'm';
         String output = "";
         double dist = getDistance();
-        Log.d("Distance", String.format(roundIt, dist) + meter);
+        // For MVC remove this log
         if (dist >= mega) {
             output = String.format(roundIt, dist / mega) + "M" + meter;
         } else if (dist >= kilo) {
