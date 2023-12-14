@@ -112,7 +112,11 @@ public class GameActivity extends Activity {
                 String length = exifInterface.getAttribute(ExifInterface.TAG_GPS_LONGITUDE);
                 in.close();
                 if (width == null && length == null) {
-                    dialogNoExif();
+                    String title = "An error has occured...";
+                    String message = "The Exif data for the one of the pictures in the album is"
+                            + " missing. Pls choose a different one!";
+                    String positive = "Choose other";
+                    standardDialog(title, message, positive, true);
                     throw new CorruptedExifDataException("Exif Data not complete");
                 }
                 String desc = exifInterface.getAttribute(ExifInterface.TAG_IMAGE_DESCRIPTION);
@@ -121,7 +125,10 @@ public class GameActivity extends Activity {
             }
         }
         if (counter == 0) {
-            dialogNoFiles();
+            String title = "We apologize...";
+            String message = "This folder is right now empty. Check it out in the near future again!";
+            String positive = "Understood";
+            standardDialog(title, message, positive, true);
             throw new NoImagesInAlbumException("No files found! Return to start");
         }
     }
@@ -190,7 +197,10 @@ public class GameActivity extends Activity {
             logCurrentImage(randomString);
             hadImage.remove(randomNum);
         } else {
-            noImagesDialog();
+            String title = "That's it!";
+            String message = "You've gone through all images";
+            String positive = "Alright";
+            standardDialog(title, message, positive, false);
         }
     }
     // ------------------------ BUTTONS -------------------------
@@ -204,7 +214,10 @@ public class GameActivity extends Activity {
 
                 // Check rather nothing was written in the user inputs
                 if (inputLenString.isEmpty() || inputWidthString.isEmpty()) {
-                    wrongValuesDialog();
+                    String title = "No values";
+                    String message = "Please input some values!";
+                    String positive = "Alrighty";
+                    standardDialog(title, message, positive, false);
                 } else {
                     double inputlen = Double.parseDouble(laengengrad.getText().toString());
                     double inputwidth = Double.parseDouble(breitengrad.getText().toString());
@@ -212,7 +225,11 @@ public class GameActivity extends Activity {
                     final int boundwidth = 90;
                     if (inputlen > boundlen || inputlen < (boundlen * -1) || inputwidth > boundwidth
                             || inputwidth < (boundwidth * -1)) {
-                        wrongValuesDialog();
+                        String title = "Wrong values";
+                        String message = "The longitude goes from -180 to 180 and the latitude"
+                                + "from -90 to 90. Correct your answer!";
+                        String positive = "Fix it";
+                        standardDialog(title, message, positive, false);
                     } else {
                         laengengrad.setEnabled(false);
                         breitengrad.setEnabled(false);
@@ -287,6 +304,23 @@ public class GameActivity extends Activity {
         }
     }
     // ------------------------ DIALOGS -------------------------
+    public void standardDialog(String title, String message, String positive, Boolean returnMain) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle(title);
+        builder.setMessage(message);
+        builder.setPositiveButton(positive, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                if (returnMain) {
+                    returnToMain();
+                }
+                dialog.dismiss();
+            }
+        });
+        AlertDialog dialog = builder.create();
+        dialog.setCanceledOnTouchOutside(false);
+        dialog.show();
+    }
     public void showExitDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Leave the Game");
@@ -303,57 +337,8 @@ public class GameActivity extends Activity {
                 dialogTwo.dismiss();
             }
         });
-        builder.create().show();
-    }
-    private void dialogNoFiles() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("We apologize...");
-        builder.setMessage("This folder is right now empty. Check it out in the near future again!");
-        builder.setPositiveButton("Understood", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                returnToMain();
-                dialog.dismiss();
-            }
-        });
-        builder.create().show();
-    }
-    private void dialogNoExif() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("An error has occured...");
-        builder.setMessage("The Exif data for the one of the pictures in the album is missing."
-                + "Pls choose a different one!");
-        builder.setPositiveButton("Choose other", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                returnToMain();
-                dialog.dismiss();
-            }
-        });
-        builder.create().show();
-    }
-    private void wrongValuesDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Wrong Values or no values");
-        builder.setMessage("The longitude goes from -180 to 180 and the latitude from -90 to 90. Correct your answer!");
-        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.dismiss();
-            }
-        });
-        builder.create().show();
-    }
-    private void noImagesDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("That's it");
-        builder.setMessage("You've gone through all images");
-        builder.setPositiveButton("Go Back", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.dismiss();
-            }
-        });
-        builder.create().show();
+        AlertDialog dialog = builder.create();
+        dialog.setCanceledOnTouchOutside(false);
+        dialog.show();
     }
 }
