@@ -58,6 +58,10 @@ public class GameActivity extends Activity {
                 readAllImages(albuName);
             } catch (IOException | NoImagesInAlbumException | CorruptedExifDataException e) {
                 Log.d(actName, "Folder doesn't exist");
+                String title = "ERROR";
+                String message = "Something went wrong. Please choose a different album";
+                String positive = "I will";
+                standardDialog(title, message, positive, true);
             }
         }
         // Log all data from datastructure
@@ -69,6 +73,10 @@ public class GameActivity extends Activity {
             hadImage.addAll(Arrays.asList(temp));
             showPicture(albuName);
         } catch (IOException e) {
+            String title = "UPPPSS";
+            String message = "This wasn't supposed to happen. Please contact our support!";
+            String positive = "Alright...";
+            standardDialog(title, message, positive, true);
             throw new RuntimeException(e);
         }
         submitGuess();
@@ -262,6 +270,10 @@ public class GameActivity extends Activity {
                     TextView result = findViewById(R.id.points);
                     result.setText(String.valueOf(0));
                 } catch (IOException e) {
+                    String title = "UPPSS";
+                    String message = "Something went wrong when setting up the next round";
+                    String positive = "Choose different album";
+                    standardDialog(title, message, positive, true);
                     e.printStackTrace();
                 }
             }

@@ -114,16 +114,19 @@ public class MainActivity extends AppCompatActivity {
                             try (InputStream in =  getAssets().open(albuSlash + folderName + "/" + fileName)) {
                                 readExif(in);
                             } catch (IOException e) {
+                                // Already being handled in game activity and method is not being used
                                 Log.d("EXIFERROR", "Exif Information couldn't be found");
                             }
                         }
                     }
                     if (imageCounter == 0) {
+                        // Already being handled in game activity and method is not being used
                         Log.d("FILEERROR", "No compatible files have been found in folder " + folderName);
                     }
                 }
             }
         } catch (IOException e) {
+            // Already being handled in game activity and method is not being used
             Log.d("FOLDERERROR", "There are no Folder/Files");
         }
     }
@@ -165,5 +168,19 @@ public class MainActivity extends AppCompatActivity {
         } else {
             Log.d(de, "Image Description nicht gefunden");
         }
+    }
+    public void standardDialog(String title, String message, String positive) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle(title);
+        builder.setMessage(message);
+        builder.setPositiveButton(positive, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+        AlertDialog dialog = builder.create();
+        dialog.setCanceledOnTouchOutside(false);
+        dialog.show();
     }
 }
