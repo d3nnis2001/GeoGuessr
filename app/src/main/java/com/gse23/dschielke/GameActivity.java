@@ -323,15 +323,18 @@ public class GameActivity extends Activity {
         builder.setPositiveButton(positive, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
                 if (returnMain) {
                     returnToMain();
                 }
-                dialog.dismiss();
             }
         });
         AlertDialog dialog = builder.create();
         dialog.setCanceledOnTouchOutside(false);
-        dialog.show();
+
+        if (!isFinishing()) {
+            dialog.show();
+        }
     }
     public void showExitDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -340,6 +343,7 @@ public class GameActivity extends Activity {
         builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
                 returnToMain();
             }
         });
