@@ -18,7 +18,6 @@ import android.widget.TextView;
 import androidx.appcompat.app.AlertDialog;
 import androidx.core.text.HtmlCompat;
 
-
 import java.util.Arrays;
 import java.util.Random;
 
@@ -29,6 +28,8 @@ import java.util.ArrayList;
 public class GameActivity extends Activity {
     double actualLongitude;
     double actualLatitude;
+    double guessedLongitude;
+    double guessedLatitude;
     String currentFilename;
     EditText breitengrad;
     EditText laengengrad;
@@ -41,10 +42,13 @@ public class GameActivity extends Activity {
     String albuSlash = "albums/";
     String actName = "GameActivity";
     String komma = ",";
+    Link link;
+    Cords cord;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.game_activity);
+        // Set all views
         breitengrad = findViewById(R.id.Breitengrad);
         laengengrad = findViewById(R.id.Laengengrad);
         assetManager = getAssets();
@@ -54,7 +58,7 @@ public class GameActivity extends Activity {
             int albumNum = intent.getIntExtra(albuNum, 0);
             currAlbum = albumNum;
             try {
-                albuName = logCurrentFile(albumNum);
+                albuName = logCurrentFolder(albumNum);
                 readAllImages(albuName);
             } catch (IOException | NoImagesInAlbumException | CorruptedExifDataException e) {
                 Log.d(actName, "Folder doesn't exist");
@@ -65,7 +69,7 @@ public class GameActivity extends Activity {
             }
         }
         // Log all data from datastructure
-        logImageData(imagesInf);
+        Logging.logImageData(imagesInf, actName);
         // Display picture
         try {
             String[] temp = assetManager.list(albuSlash + albuName);
@@ -82,19 +86,7 @@ public class GameActivity extends Activity {
         submitGuess();
         // Next Picture Button
         nextPic();
-    }
-    private String getLink(double inputlen, double inputwidth) {
-        String link = "https://www.openstreetmap.org/directions?"
-                + "engine=fossgis_valhalla_foot&route=";
-        ImageInfo img =  getCurrentImageInf(currentFilename);
-        assert img != null;
-        String currLen = formatCord(img.getLength());
-        String currWid = formatCord(img.getWidth());
-        actualLatitude = Double.parseDouble(currWid);
-        actualLongitude = Double.parseDouble(currLen);
-        String map = link + inputwidth + komma + inputlen + ";" + currWid + komma + currLen;
-        Log.d("GetLink", map);
-        return map;
+        // Set all Classes
     }
     private ImageInfo getCurrentImageInf(String filename) {
         for (ImageInfo imageInfo : imagesInf) {
@@ -111,7 +103,7 @@ public class GameActivity extends Activity {
         int counter = 0;
         assert albumNames != null;
         for (String fileName : albumNames) {
-            if (fitsFormat(fileName)) {
+            if (Util.fitsFormat(fileName)) {
                 counter++;
                 InputStream in = getAssets().open(albuSlash + foldername + "/"
                         + fileName);
@@ -145,27 +137,6 @@ public class GameActivity extends Activity {
         intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         startActivity(intent);
         finish();
-    }
-    private Boolean fitsFormat(String filename) {
-        String lower = filename.toLowerCase();
-        return lower.endsWith(".jpeg") || lower.endsWith(".jpg") || lower.endsWith(".png");
-    }
-    private String formatCord(String cord) {
-        final int min = 60;
-        final int sec = 3600;
-        final int mil = 100000000;
-        final int umrechnung = 1000000;
-        final int drei = 3;
-        cord = cord.replace(komma, ".");
-        String[] cords = cord.split("/");
-        double output = Double.parseDouble(cords[0])
-                + Double.parseDouble(cords[1]) / min
-                + Double.parseDouble(cords[2]) / sec
-                + Double.parseDouble(cords[drei]) / mil;
-        double newres = Math.round(output * umrechnung);
-        String result = String.valueOf(newres / umrechnung);
-        Log.d("RESULT", result);
-        return result;
     }
     // ------------------------ SET VIEWS -------------------------
     private void setLink(String link) {
@@ -202,8 +173,14 @@ public class GameActivity extends Activity {
             breitengrad.setText("");
             laengengrad.setText("");
             // Added Logging of the picture before removing it from the arr
-            logCurrentImage(randomString);
+            Logging.logCurrentImage(randomString, imagesInf, actName);
             hadImage.remove(randomNum);
+            ImageInfo img = getCurrentImageInf(currentFilename);
+            assert img != null;
+            String len = Util.formatCord(img.getLength());
+            String wid = Util.formatCord(img.getWidth());
+            actualLongitude = Double.parseDouble(len);
+            actualLatitude = Double.parseDouble(wid);
         } else {
             String title = "That's it!";
             String message = "You've gone through all images";
@@ -242,9 +219,13 @@ public class GameActivity extends Activity {
                         laengengrad.setEnabled(false);
                         breitengrad.setEnabled(false);
                         // get link and set link on textview
-                        String link = getLink(inputlen, inputwidth);
-                        setLink(link);
-                        Cords cord = new Cords(actualLatitude, actualLongitude, inputwidth, inputlen);
+                        guessedLatitude = inputwidth;
+                        guessedLongitude = inputlen;
+                        link = new Link(guessedLatitude, guessedLongitude, actualLatitude, actualLongitude);
+                        Log.d("GetLink", link.getLink());
+                        setLink(link.getLink());
+                        cord = new Cords(actualLatitude, actualLongitude, guessedLatitude, guessedLongitude);
+
                         double dist = cord.getDistance();
                         String roundIt = "%.2f";
                         Log.d("Distance", String.format(roundIt, dist) + "m");
@@ -283,37 +264,12 @@ public class GameActivity extends Activity {
         showExitDialog();
     }
     // ------------------------ LOGGING -------------------------
-    private void logCurrentImage(String filename) {
-        for (ImageInfo imageInfo : imagesInf) {
-            if (imageInfo.getFileName().equals(filename)) {
-                Log.d(actName, imageInfo.getFileName());
-                Log.d(actName, imageInfo.getWidth());
-                Log.d(actName, imageInfo.getLength());
-            }
-        }
-    }
-    private String logCurrentFile(int pos) throws IOException {
+    private String logCurrentFolder(int pos) throws IOException {
         assetManager = getAssets();
         String[] albumNames = assetManager.list("albums");
         assert albumNames != null;
         Log.d("Album:", albumNames[pos]);
         return albumNames[pos];
-    }
-    private void logImageData(ArrayList<ImageInfo> imginf) {
-        for (int i = 0; i < imginf.size(); i++) {
-            String filename = imginf.get(i).getFileName();
-            String width = imginf.get(i).getWidth();
-            String length = imginf.get(i).getLength();
-            String desc = imginf.get(i).getDesc();
-            Log.d(actName, filename);
-            Log.d(actName, width);
-            Log.d(actName, length);
-            if (desc != null) {
-                Log.d(actName, desc);
-            } else {
-                Log.d(actName, "No Description");
-            }
-        }
     }
     // ------------------------ DIALOGS -------------------------
     public void standardDialog(String title, String message, String positive, Boolean returnMain) {
