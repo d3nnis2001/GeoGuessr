@@ -169,18 +169,4 @@ public class MainActivity extends AppCompatActivity {
             Log.d(de, "Image Description nicht gefunden");
         }
     }
-    public void standardDialog(String title, String message, String positive) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle(title);
-        builder.setMessage(message);
-        builder.setPositiveButton(positive, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.dismiss();
-            }
-        });
-        AlertDialog dialog = builder.create();
-        dialog.setCanceledOnTouchOutside(false);
-        dialog.show();
-    }
 }

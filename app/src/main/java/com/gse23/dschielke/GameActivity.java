@@ -19,82 +19,99 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.core.text.HtmlCompat;
 
 import java.util.Arrays;
-import java.util.Random;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 
 public class GameActivity extends Activity {
-    double actualLongitude;
-    double actualLatitude;
-    double guessedLongitude;
-    double guessedLatitude;
-    String currentFilename;
     EditText breitengrad;
     EditText laengengrad;
-    ArrayList<String> hadImage = new ArrayList<>();
+    ImageView image;
+    Button submit;
+    TextView linkView;
+    TextView dist;
+    TextView result;
+    Button showPictureButton;
     ArrayList<ImageInfo> imagesInf = new ArrayList<>();
     int currAlbum = 0;
     String albuName;
+    AlertDialog dialog;
     AssetManager assetManager;
     String albuNum = "AlbumNum";
     String albuSlash = "albums/";
     String actName = "GameActivity";
-    String komma = ",";
-    Link link;
-    Cords cord;
+    Game game;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.game_activity);
-        // Set all views
+        // ---------------- VIEWS -----------------
+        result = findViewById(R.id.points);
         breitengrad = findViewById(R.id.Breitengrad);
         laengengrad = findViewById(R.id.Laengengrad);
+        image = findViewById(R.id.imageView);
+        submit = findViewById(R.id.submitButton);
+        linkView = findViewById(R.id.mapLink);
+        dist = findViewById(R.id.distance);
+        showPictureButton = findViewById(R.id.showButton);
+
         assetManager = getAssets();
         Intent intent = getIntent();
-        // Add Exif data to datastructure
         if (intent != null && intent.hasExtra(albuNum)) {
             int albumNum = intent.getIntExtra(albuNum, 0);
             currAlbum = albumNum;
             try {
                 albuName = logCurrentFolder(albumNum);
                 readAllImages(albuName);
+                try {
+                    // Log all data from datastructure
+                    Logging.logImageData(imagesInf, actName);
+                    // Display picture
+                    String[] temp = assetManager.list(albuSlash + albuName);
+                    assert temp != null;
+                    ArrayList<String> hadImage = new ArrayList<>(Arrays.asList(temp));
+                    game = new Game(imagesInf, hadImage);
+                    showPicture(albuName);
+                    submitGuess();
+                    nextPic();
+                } catch (IOException e) {
+                    String title = "UPPPSS";
+                    String message = "This wasn't supposed to happen. Please contact our support!";
+                    String positive = "Alright...";
+                    standardDialog(title, message, positive, true);
+                    throw new RuntimeException(e);
+                }
             } catch (IOException | NoImagesInAlbumException | CorruptedExifDataException e) {
                 Log.d(actName, "Folder doesn't exist");
                 String title = "ERROR";
                 String message = "Something went wrong. Please choose a different album";
                 String positive = "I will";
-                standardDialog(title, message, positive, true);
+                standardDialog(title, message, positive, false);
             }
         }
-        // Log all data from datastructure
-        Logging.logImageData(imagesInf, actName);
-        // Display picture
-        try {
-            String[] temp = assetManager.list(albuSlash + albuName);
-            assert temp != null;
-            hadImage.addAll(Arrays.asList(temp));
-            showPicture(albuName);
-        } catch (IOException e) {
-            String title = "UPPPSS";
-            String message = "This wasn't supposed to happen. Please contact our support!";
-            String positive = "Alright...";
-            standardDialog(title, message, positive, true);
-            throw new RuntimeException(e);
-        }
-        submitGuess();
-        // Next Picture Button
-        nextPic();
-        // Set all Classes
     }
-    private ImageInfo getCurrentImageInf(String filename) {
-        for (ImageInfo imageInfo : imagesInf) {
-            if (imageInfo.getFileName().equals(filename)) {
-                return imageInfo;
+    private void nextPic() {
+        showPictureButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                try {
+                    // Show next pic and reset the inputs and textviews
+                    showPicture(albuName);
+                    laengengrad.setEnabled(true);
+                    breitengrad.setEnabled(true);
+                    setDistance("No matter", false);
+                    result.setText(String.valueOf(0));
+                } catch (IOException e) {
+                    String title = "UPPSS";
+                    String message = "Something went wrong when setting up the next round";
+                    String positive = "Choose different album";
+                    standardDialog(title, message, positive, true);
+                    e.printStackTrace();
+                }
             }
-        }
-        return null;
+        });
     }
     private void readAllImages(String foldername) throws IOException,
             NoImagesInAlbumException, CorruptedExifDataException {
@@ -132,55 +149,23 @@ public class GameActivity extends Activity {
             throw new NoImagesInAlbumException("No files found! Return to start");
         }
     }
-    private void returnToMain() {
-        Intent intent = new Intent(this, MainActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        startActivity(intent);
-        finish();
-    }
-    // ------------------------ SET VIEWS -------------------------
-    private void setLink(String link) {
-        TextView linkView = findViewById(R.id.mapLink);
-        String text = "<string name='hyperlink'><a href='" + link + "'>Map</a></string>";
-        linkView.setText(HtmlCompat.fromHtml(text, HtmlCompat.FROM_HTML_MODE_LEGACY));
-        linkView.setMovementMethod(LinkMovementMethod.getInstance());
-    }
-    private void setDistance(String dis, Boolean vis) {
-        TextView dist = findViewById(R.id.distance);
-        if (vis) {
-            dist.setText(dis);
-            dist.setVisibility(View.VISIBLE);
-        } else {
-            dist.setVisibility(View.INVISIBLE);
-        }
-    }
-    private void setPoints(double points) {
-        TextView result = findViewById(R.id.points);
-        result.setText(String.valueOf(points));
-    }
     private void showPicture(String foldername) throws IOException {
         assetManager = getAssets();
-        if (hadImage != null && hadImage.size() > 0) {
-            Random random = new Random();
-            int randomNum = random.nextInt(hadImage.size());
-            String randomString = hadImage.get(randomNum);
-            currentFilename = randomString;
+        String randomString = game.getRandomPic();
+        if (!randomString.equals("")) {
             InputStream st = getAssets().open(albuSlash + foldername + "/" + randomString);
-            ImageView imageView = findViewById(R.id.imageView);
             Drawable drawable = Drawable.createFromStream(st, null);
             st.close();
-            imageView.setImageDrawable(drawable);
+            image.setImageDrawable(drawable);
             breitengrad.setText("");
             laengengrad.setText("");
             // Added Logging of the picture before removing it from the arr
             Logging.logCurrentImage(randomString, imagesInf, actName);
-            hadImage.remove(randomNum);
-            ImageInfo img = getCurrentImageInf(currentFilename);
-            assert img != null;
+            ImageInfo img = game.getCurrentImageInf(randomString);
             String len = Util.formatCord(img.getLength());
             String wid = Util.formatCord(img.getWidth());
-            actualLongitude = Double.parseDouble(len);
-            actualLatitude = Double.parseDouble(wid);
+            game.setActualLatitude(Double.parseDouble(len));
+            game.setActualLongitude(Double.parseDouble(wid));
         } else {
             String title = "That's it!";
             String message = "You've gone through all images";
@@ -190,7 +175,6 @@ public class GameActivity extends Activity {
     }
     // ------------------------ BUTTONS -------------------------
     private void submitGuess() {
-        Button submit = findViewById(R.id.submitButton);
         submit.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -206,10 +190,9 @@ public class GameActivity extends Activity {
                 } else {
                     double inputlen = Double.parseDouble(laengengrad.getText().toString());
                     double inputwidth = Double.parseDouble(breitengrad.getText().toString());
-                    final int boundlen = 180;
-                    final int boundwidth = 90;
-                    if (inputlen > boundlen || inputlen < (boundlen * -1) || inputwidth > boundwidth
-                            || inputwidth < (boundwidth * -1)) {
+                    game.setGuessedLatitude(inputwidth);
+                    game.setGuessedLongitude(inputlen);
+                    if (!game.checkValues()) {
                         String title = "Wrong values";
                         String message = "The longitude goes from -180 to 180 and the latitude"
                                 + "from -90 to 90. Correct your answer!";
@@ -218,47 +201,47 @@ public class GameActivity extends Activity {
                     } else {
                         laengengrad.setEnabled(false);
                         breitengrad.setEnabled(false);
-                        // get link and set link on textview
-                        guessedLatitude = inputwidth;
-                        guessedLongitude = inputlen;
-                        link = new Link(guessedLatitude, guessedLongitude, actualLatitude, actualLongitude);
-                        Log.d("GetLink", link.getLink());
-                        setLink(link.getLink());
-                        cord = new Cords(actualLatitude, actualLongitude, guessedLatitude, guessedLongitude);
 
-                        double dist = cord.getDistance();
+                        String currlink = game.getLink();
+                        double dist = game.getDistance();
+                        String output = game.getSensible();
+                        double points = game.getPoints();
+
                         String roundIt = "%.2f";
+
+                        Log.d("GetLink", currlink);
                         Log.d("Distance", String.format(roundIt, dist) + "m");
-                        String output = cord.sensibleUnitAddition();
-                        Points point = new Points(dist);
-                        setPoints(point.getPoints());
+
+                        setLink(currlink);
+                        setPoints(points);
                         setDistance(output, true);
                     }
                 }
             }
         });
     }
-    private void nextPic() {
-        Button showPictureButton = findViewById(R.id.showButton);
-        showPictureButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                try {
-                    showPicture(albuName);
-                    laengengrad.setEnabled(true);
-                    breitengrad.setEnabled(true);
-                    setDistance("No matter", false);
-                    TextView result = findViewById(R.id.points);
-                    result.setText(String.valueOf(0));
-                } catch (IOException e) {
-                    String title = "UPPSS";
-                    String message = "Something went wrong when setting up the next round";
-                    String positive = "Choose different album";
-                    standardDialog(title, message, positive, true);
-                    e.printStackTrace();
-                }
-            }
-        });
+    private void returnToMain() {
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        startActivity(intent);
+        finish();
+    }
+    // ------------------------ SET VIEWS -------------------------
+    private void setLink(String link) {
+        String text = "<string name='hyperlink'><a href='" + link + "'>Map</a></string>";
+        linkView.setText(HtmlCompat.fromHtml(text, HtmlCompat.FROM_HTML_MODE_LEGACY));
+        linkView.setMovementMethod(LinkMovementMethod.getInstance());
+    }
+    private void setDistance(String dis, Boolean vis) {
+        if (vis) {
+            dist.setText(dis);
+            dist.setVisibility(View.VISIBLE);
+        } else {
+            dist.setVisibility(View.INVISIBLE);
+        }
+    }
+    private void setPoints(double points) {
+        result.setText(String.valueOf(points));
     }
     public void onBackPressed() {
         showExitDialog();
@@ -273,24 +256,23 @@ public class GameActivity extends Activity {
     }
     // ------------------------ DIALOGS -------------------------
     public void standardDialog(String title, String message, String positive, Boolean returnMain) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle(title);
-        builder.setMessage(message);
-        builder.setPositiveButton(positive, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.dismiss();
-                if (returnMain) {
-                    returnToMain();
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle(title);
+            builder.setMessage(message);
+            builder.setPositiveButton(positive, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.dismiss();
+                    if (!isFinishing() && !isDestroyed()) {
+                        if (returnMain) {
+                            returnToMain();
+                        }
+                    }
                 }
-            }
-        });
-        AlertDialog dialog = builder.create();
-        dialog.setCanceledOnTouchOutside(false);
-
-        if (!isFinishing()) {
+            });
+            dialog = builder.create();
+            dialog.setCanceledOnTouchOutside(false);
             dialog.show();
-        }
     }
     public void showExitDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
